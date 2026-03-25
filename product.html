@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل المنتج</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div id="loader"><div class="spinner"></div></div>
+
+    <header>
+        <a href="index.html" class="logo"><i class="fas fa-arrow-right"></i> عودة للمتجر</a>
+    </header>
+
+    <div class="container" style="margin-top: 2rem;">
+        <div id="product-detail-container" class="product-detail">
+            <!-- Images -->
+            <div class="product-images">
+                <img id="p-img" class="main-img" src="" alt="منتج">
+                <div id="thumbnail-gallery" class="thumbnail-gallery"></div>
+            </div>
+
+            <!-- Info & Form -->
+            <div class="product-info">
+                <h1 id="p-title" style="margin-bottom: 1rem;"></h1>
+                <div id="p-price" class="card-price" style="text-align: right; margin-bottom: 1rem;"></div>
+                <p id="p-desc" style="color: var(--text-light); margin-bottom: 2rem; line-height: 1.8;"></p>
+
+                <form id="order-form" style="background: #f8fafc; padding: 1.5rem; border-radius: var(--radius);">
+                    <h3 style="margin-bottom: 1rem; border-bottom: 1px solid #ddd; padding-bottom: 0.5rem;">📝 إتمام الطلب</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>الاسم</label>
+                            <input type="text" id="fname" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>اللقب</label>
+                            <input type="text" id="lname" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>رقم الهاتف</label>
+                        <input type="tel" id="phone" class="form-control" placeholder="05/06/07..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>الولاية</label>
+                        <select id="wilaya" class="form-control" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>العنوان بالتفصيل</label>
+                        <textarea id="address" class="form-control" rows="2" required></textarea>
+                    </div>
+
+                    <input type="hidden" id="base-price">
+                    
+                    <div class="total-box" style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--primary);">
+                        <span>الإجمالي للدفع: </span>
+                        <strong id="total-price" style="color: var(--primary); font-size: 1.2rem;">0 دج</strong>
+                        <small style="display: block; color: #666; font-size: 0.8rem;">(شامل سعر المنتج + التوصيل)</small>
+                    </div>
+
+                    <button type="submit" class="btn-primary">تأكيد الطلب الآن 🚀</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <div style="font-size: 3rem; color: var(--success); margin-bottom: 1rem;">✅</div>
+            <h2>تم استلام طلبك!</h2>
+            <p style="color: var(--text-light); margin: 1rem 0;">شكراً لك، سيتصل بك فريقنا قريباً لتأكيد الطلب.</p>
+            <button onclick="window.location.href='index.html'" class="btn-primary">العودة للرئيسية</button>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متجري الإلكتروني | الرئيسية</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Loader -->
+    <div id="loader"><div class="spinner"></div></div>
+
+    <!-- Header -->
+    <header>
+        <a href="index.html" class="logo"><i class="fas fa-shopping-bag"></i> متجري</a>
+        <nav class="nav-links">
+            <a href="index.html" class="btn-nav">الرئيسية</a>
+          
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>أهلاً بك في متجرنا الإلكتروني</h1>
+        <p>اكتشف أفضل المنتجات بأفضل الأسعار، توصيل سريع لجميع الولايات</p>
+        <a href="#products" class="btn-nav" style="background: white; color: var(--primary);">تسوق الآن</a>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container" id="products">
+        <!-- Controls -->
+        <div class="controls-bar">
+            <input type="text" id="product-search" class="search-input" placeholder="🔍 ابحث عن منتج...">
+            <select id="category-filter" class="filter-select">
+                <option value="all">جميع التصنيفات</option>
+                <option value="electronics">إلكترونيات</option>
+                <option value="fashion">أزياء</option>
+                <option value="home">المنزل</option>
+            </select>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="products-grid" id="products-grid">
+            <!-- سيتم تعبئة المنتجات هنا بواسطة JS -->
+        </div>
+    </div>
+
+    <!-- WhatsApp Float -->
+    <a href="https://wa.me/213550000000" class="whatsapp-float" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2024 جميع الحقوق محفوظة لمتجري الإلكتروني</p>
+    </footer>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
