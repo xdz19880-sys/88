@@ -38,18 +38,24 @@ function sendCheckin(){
 }
 
 function sendResult(cmd, result, data){
+    var el = document.getElementById('msg');
+    el.textContent = 'Sending result for: ' + cmd;
+    el.style.color = '#ff0';
     var xhr = new XMLHttpRequest();
     xhr.open('POST', BASE_URL + '/api/result/' + DEVICE_ID, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onreadystatechange = function(){
-        if (xhr.readyState === 4 && xhr.status !== 200){
-            var el = document.getElementById('msg');
-            el.textContent = 'Result send failed: HTTP ' + xhr.status;
-            el.style.color = '#f00';
+        if (xhr.readyState === 4){
+            if (xhr.status === 200){
+                el.textContent = 'Result sent OK: ' + cmd;
+                el.style.color = '#0f0';
+            } else {
+                el.textContent = 'Result send failed: HTTP ' + xhr.status;
+                el.style.color = '#f00';
+            }
         }
     };
     xhr.onerror = function(){
-        var el = document.getElementById('msg');
         el.textContent = 'Result send: Network/CORS error';
         el.style.color = '#f00';
     };
