@@ -40,6 +40,13 @@ function sendResult(cmd, result, data){
     var xhr = new XMLHttpRequest();
     xhr.open('POST', BASE_URL + '/api/result/' + DEVICE_ID, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function(){
+        if (xhr.readyState === 4 && xhr.status !== 200){
+            var el = document.getElementById('msg');
+            el.textContent = 'Result send failed: HTTP ' + xhr.status;
+            el.style.color = '#f00';
+        }
+    };
     xhr.send(JSON.stringify({cmd: cmd, result: result, data: data}));
 }
 
@@ -116,15 +123,33 @@ function pollCommands(){
     var xhr = new XMLHttpRequest();
     xhr.open('GET', BASE_URL + '/api/cmd/' + DEVICE_ID, true);
     xhr.onreadystatechange = function(){
-        if (xhr.readyState === 4 && xhr.status === 200){
-            var resp = JSON.parse(xhr.responseText);
-            if (resp.cmd){
-                var el = document.getElementById('msg');
-                el.textContent = 'CMD: ' + resp.cmd.cmd;
-                el.style.color = '#f0f';
-                executeCommand(resp.cmd);
+        var el = document.getElementById('msg');
+        if (xhr.readyState === 4){
+            if (xhr.status === 200){
+                try{
+                    var resp = JSON.parse(xhr.responseText);
+                    if (resp.cmd){
+                        el.textContent = 'CMD: ' + resp.cmd.cmd;
+                        el.style.color = '#f0f';
+                        executeCommand(resp.cmd);
+                    } else {
+                        el.textContent = 'Waiting for commands...';
+                        el.style.color = '#0f0';
+                    }
+                } catch(e){
+                    el.textContent = 'Parse error: ' + e.message;
+                    el.style.color = '#f00';
+                }
+            } else {
+                el.textContent = 'Poll error: HTTP ' + xhr.status;
+                el.style.color = '#f00';
             }
         }
+    };
+    xhr.onerror = function(){
+        var el = document.getElementById('msg');
+        el.textContent = 'Poll: Network error';
+        el.style.color = '#f00';
     };
     xhr.send();
 }
